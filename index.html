@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimalist Profil | Tasarım</title>
+    <!-- Inter Font: Modern ve Okunabilir -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #050505;
+            --accent-pink: #643F23; /* Belirttiğiniz tok ton (Koyu Bakır/Pembe) */
+            --soft-pink: #a36a4d;
+            --text-main: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.6);
+            --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            /* Yumuşak gradient arka plan */
+            background: radial-gradient(circle at bottom right, var(--accent-pink) 0%, var(--bg-color) 70%);
+            animation: background-glow 10s ease-in-out infinite alternate;
+        }
+
+        @keyframes background-glow {
+            from { background-position: 0% 0%; }
+            to { background-position: 100% 100%; }
+        }
+
+        /* Fade-in Animasyonu */
+        .fade-in {
+            animation: fadeIn 1s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Avatar Bölümü */
+        .avatar-container {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 100;
+        }
+
+        .avatar-wrapper {
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            cursor: pointer;
+            transition: var(--transition);
+            background: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .avatar-wrapper:hover, .avatar-wrapper:focus {
+            transform: scale(1.08);
+            border-color: var(--soft-pink);
+            outline: none;
+        }
+
+        .avatar-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #file-input { display: none; }
+
+        /* Ana İçerik */
+        main {
+            text-align: center;
+            max-width: 500px;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            letter-spacing: -1px;
+        }
+
+        p {
+            color: var(--text-dim);
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+
+        /* Butonlar */
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.8rem 1.8rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 400;
+            transition: var(--transition);
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-pink);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--soft-pink);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border-color: rgba(255, 255, 255, 0.2);
+            color: var(--text-main);
+        }
+
+        .btn-outline:hover {
+            border-color: white;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Müzik Çalar */
+        .music-player {
+            margin-top: 3rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            width: fit-content;
+        }
+
+        .play-btn {
+            background: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .song-info {
+            font-size: 0.8rem;
+            text-align: left;
+        }
+
+        .song-name { display: block; font-weight: 600; }
+        .artist-name { color: var(--text-dim); }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            h1 { font-size: 2rem; }
+            .avatar-container { top: 1.5rem; right: 1.5rem; }
+            .avatar-wrapper { width: 65px; height: 65px; }
+            .btn-group { flex-direction: column; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sağ Üst Profil Bölümü -->
+    <nav class="avatar-container" class="fade-in">
+        <label for="file-input" class="avatar-wrapper" tabindex="0" aria-label="Profil resmini değiştir" role="button" onkeydown="if(event.key==='Enter') document.getElementById('file-input').click()">
+            <img id="avatar-preview" src="https://via.placeholder.com/150/111/fff?text=AX" alt="Profil Resmi">
+        </label>
+        <input type="file" id="file-input" accept="image/*" aria-hidden="true">
+    </nav>
+
+    <!-- Ana İçerik -->
+    <main class="fade-in">
+        <h1>Axellizm</h1>
+        <p>Sadelik, karmaşıklığın en üst noktasıdır. Dijital dünyada estetik ve fonksiyonelliği minimalist bir dille harmanlıyorum.</p>
+        
+        <div class="btn-group">
+            <a href="#" class="btn btn-primary" aria-label="Projeleri görüntüle">Projeler</a>
+            <a href="#" class="btn btn-outline" aria-label="İletişime geç">İletişim</a>
+        </div>
+
+        <!-- Müzik Oynatıcı (Opsiyonel) -->
+        <div class="music-player">
+            <button class="play-btn" id="audio-toggle" aria-label="Müziği oynat veya durdur">
+                <span id="play-icon">▶</span>
+            </button>
+            <div class="song-info">
+                <span class="song-name">Alacarte</span>
+                <span class="artist-name">Deha Tuzcu</span>
+            </div>
+            <audio id="bg-audio" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio> <!-- Örnek link konuldu -->
+        </div>
+    </main>
+
+    <script>
+        // Avatar Yükleme ve Önizleme
+        const fileInput = document.getElementById('file-input');
+        const avatarPreview = document.getElementById('avatar-preview');
+
+        fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    avatarPreview.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Müzik Oynatıcı Kontrolü
+        const audio = document.getElementById('bg-audio');
+        const audioToggle = document.getElementById('audio-toggle');
+        const playIcon = document.getElementById('play-icon');
+        let isPlaying = false;
+
+        audioToggle.addEventListener('click', () => {
+            if (isPlaying) {
+                audio.pause();
+                playIcon.innerText = "▶";
+            } else {
+                audio.play().catch(e => console.log("Oynatma engellendi: Kullanıcı etkileşimi gerekiyor."));
+                playIcon.innerText = "||";
+            }
+            isPlaying = !isPlaying;
+        });
+
+        // Erişilebilirlik: Enter tuşu ile dosya seçiciyi tetikleme
+        document.querySelector('.avatar-wrapper').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                fileInput.click();
+            }
+        });
+    </script>
+</body>
+</html>
