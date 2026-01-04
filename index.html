@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Axellizm | High-End Experience</title>
+    
+    <!-- Google Fonts & Libraries -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root {
+            --bg-color: #050505;
+            --accent-pink: #643F23;
+            --soft-pink: #a36a4d;
+            --neon-pink: #ff007f;
+            /* Yeni Tema Renkleri (Müzik Çalar İçin) */
+            --classic-black: #0a0a0a;
+            --deep-red: #8b0000;
+            --glass-black: rgba(0, 0, 0, 0.85);
+            --glass-yellow: rgba(255, 191, 0, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.6);
+            --transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; outline: none; }
+        body { background-color: var(--bg-color); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+
+        /* Arka Plan Glow Animasyonu */
+        #bg-glow {
+            position: fixed; inset: 0; z-index: -1;
+            background: radial-gradient(circle at bottom right, var(--accent-pink) 0%, var(--bg-color) 70%);
+            animation: bgPulse 10s ease-in-out infinite alternate;
+        }
+        @keyframes bgPulse { from { opacity: 0.7; } to { opacity: 1; } }
+
+        /* Sağ Üst Profil */
+        .avatar-container { position: fixed; top: 2rem; right: 2rem; z-index: 1000; }
+        .avatar-wrapper {
+            width: 75px; height: 75px; border-radius: 50%; border: 2px solid var(--glass-border);
+            overflow: hidden; cursor: pointer; transition: var(--transition); background: #111;
+            position: relative; display: flex; align-items: center; justify-content: center;
+        }
+        .avatar-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        .pfp-loader { position: absolute; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; font-size: 10px; }
+
+        /* Ana İçerik */
+        main { text-align: center; max-width: 600px; padding: 2rem; z-index: 10; width: 100%; }
+        h1 { font-size: clamp(2.5rem, 8vw, 4rem); font-weight: 600; letter-spacing: -3px; margin-bottom: 0.5rem; }
+        .subtitle { color: var(--text-dim); font-size: 1.1rem; margin-bottom: 3rem; font-weight: 300; }
+
+        /* Butonlar */
+        .btn-stack { display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 360px; margin: 0 auto; }
+        .btn-custom {
+            padding: 1.3rem; background: linear-gradient(135deg, var(--glass-black), var(--glass-yellow));
+            backdrop-filter: blur(25px); border: 1px solid var(--glass-border); border-radius: 25px;
+            color: #fff; text-transform: uppercase; letter-spacing: 4px; font-size: 0.8rem; cursor: pointer; transition: var(--transition);
+        }
+        .btn-custom:hover { transform: translateY(-5px); border-color: var(--neon-pink); box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
+
+        /* =========================================
+           YENİ KLASİK MÜZİK ÇALAR PANELİ
+           ========================================= */
+        .music-panel-v3 {
+            margin: 3.5rem auto 0;
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(15px);
+            padding: 10px 22px;
+            border-radius: 18px;
+            border: 1px solid rgba(139, 0, 0, 0.3); /* Tok Kırmızı Detay */
+            width: fit-content;
+            max-width: 380px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.8);
+            transition: var(--transition);
+        }
+
+        .music-panel-v3:hover {
+            border-color: var(--deep-red);
+            transform: translateY(-2px);
+        }
+
+        .m-v3-cover {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: #111;
+        }
+
+        .m-v3-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .m-v3-info {
+            text-align: left;
+            min-width: 120px;
+        }
+
+        .m-v3-title {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: 0.3px;
+        }
+
+        .m-v3-artist {
+            display: block;
+            font-size: 0.7rem;
+            color: #777;
+            margin-top: 2px;
+        }
+
+        .m-v3-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 10px;
+        }
+
+        .m-v3-play-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--deep-red);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s ease;
+            color: white;
+        }
+
+        .m-v3-play-btn:hover {
+            background: #a00000;
+            transform: scale(1.08);
+        }
+
+        .m-v3-play-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* Overlay Modüller */
+        .overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 2000;
+            display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(20px);
+        }
+        .exit-btn {
+            position: absolute; top: 2.5rem; left: 2.5rem; background: rgba(255,255,255,0.05); color: #fff;
+            border: 1px solid var(--glass-border); padding: 0.8rem 1.8rem; border-radius: 15px; cursor: pointer; z-index: 2100;
+        }
+        .exit-btn:hover { background: #fff; color: #000; }
+
+        /* Kartlar (Story & AI) */
+        .iphone-card {
+            width: 90%; max-width: 440px; background: rgba(20,20,20,0.8); border-radius: 40px;
+            padding: 2.5rem; border: 1px solid var(--glass-border); backdrop-filter: blur(40px);
+        }
+        .iphone-input {
+            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+            padding: 1.2rem; border-radius: 20px; color: #fff; margin-bottom: 1.5rem; font-size: 1rem;
+        }
+
+        /* Yılan Oyunu HUD */
+        #snake-score { position: absolute; top: 2.5rem; right: 2.5rem; font-size: 3rem; font-weight: 600; color: var(--neon-pink); }
+        .dpad { display: none; position: absolute; bottom: 2rem; grid-template-areas: ". u ." "l d r"; gap: 12px; }
+        @media (max-width: 768px) { .dpad { display: grid; } }
+        .d-btn { width: 65px; height: 65px; background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; }
+
+        /* Feed Alanları */
+        #story-feed, #ai-gallery { margin-top: 1rem; max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; scrollbar-width: none; }
+        .story-item { background: rgba(255,255,255,0.03); padding: 1.2rem; border-radius: 18px; border-left: 4px solid var(--neon-pink); text-align: left; }
+        .gallery-img { width: 100%; border-radius: 15px; border: 1px solid var(--glass-border); }
+    </style>
+</head>
+<body>
+
+    <div id="bg-glow"></div>
+
+    <!-- Profil Bölümü -->
+    <nav class="avatar-container">
+        <label for="pfp-upload" class="avatar-wrapper" id="pfp-trigger">
+            <img id="pfp-img" src="https://api.dicebear.com/7.x/shapes/svg?seed=Axellizm" alt="Profil">
+            <div class="pfp-loader" id="pfp-loader">...</div>
+        </label>
+        <input type="file" id="pfp-upload" hidden accept="image/*">
+    </nav>
+
+    <main>
+        <h1>Axellizm</h1>
+        <p class="subtitle">Minimalist dijital ekosistem ve gelişmiş modüler deneyim.</p>
+        
+        <div class="btn-stack">
+            <button class="btn-custom" onclick="AppUI.open('snake-ui')">Yılan Oyunu</button>
+            <button class="btn-custom" onclick="AppUI.open('heart-ui')">3D Kalp Parçacıkları</button>
+            <button class="btn-custom" onclick="AppUI.open('ai-ui')">Görsel Oluşturun</button>
+            <button class="btn-custom" onclick="AppUI.open('story-ui')">Story Paneli</button>
+        </div>
+
+        <!-- MODERN KLASİK MÜZİK ÇALAR -->
+        <div class="music-panel-v3">
+            <div class="m-v3-cover">
+                <img src="https://i.pinimg.com/564x/0a/61/80/0a61803f295171789c636f3d9b07137b.jpg" alt="Cover">
+            </div>
+            <div class="m-v3-info">
+                <span class="m-v3-title">Axellizm Special</span>
+                <span class="m-v3-artist">Deha Tuzcu - Alacarte</span>
+            </div>
+            <div class="m-v3-controls">
+                <button class="m-v3-play-btn" id="m-toggle" onclick="Media.toggle()">
+                    <svg id="play-svg" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <svg id="pause-svg" viewBox="0 0 24 24" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Overlay Modülleri (Dokunulmadı) -->
+    <div id="snake-ui" class="overlay">
+        <button class="exit-btn" onclick="AppUI.close('snake-ui')">← ÇIKIŞ</button>
+        <div id="snake-score">0</div>
+        <div id="snake-canvas-box" style="width: 100%; height: 100%;"></div>
+        <div class="dpad">
+            <div class="d-btn" style="grid-area: u;" onclick="SnakeEngine.setDir(0,0,-1)">↑</div>
+            <div class="d-btn" style="grid-area: l;" onclick="SnakeEngine.setDir(-1,0,0)">←</div>
+            <div class="d-btn" style="grid-area: d;" onclick="SnakeEngine.setDir(0,0,1)">↓</div>
+            <div class="d-btn" style="grid-area: r;" onclick="SnakeEngine.setDir(1,0,0)">→</div>
+        </div>
+    </div>
+
+    <div id="heart-ui" class="overlay">
+        <button class="exit-btn" onclick="AppUI.close('heart-ui')">← ÇIKIŞ</button>
+        <div id="heart-canvas-box" style="width: 100%; height: 100%;"></div>
+    </div>
+
+    <div id="ai-ui" class="overlay">
+        <button class="exit-btn" onclick="AppUI.close('ai-ui')">← ÇIKIŞ</button>
+        <div class="iphone-card">
+            <h2 style="margin-bottom: 1.5rem; font-weight: 300;">AI Vision</h2>
+            <textarea id="ai-prompt" class="iphone-input" rows="3" placeholder="Hayalinizi betimleyin..."></textarea>
+            <button class="btn-custom" style="width: 100%;" onclick="AI.generate()">Görsel Oluşturun</button>
+            <div id="ai-status" style="margin-top: 15px; font-size: 0.75rem; color: var(--neon-pink); display: none;">İlham alınıyor...</div>
+            <div id="ai-gallery"></div>
+        </div>
+    </div>
+
+    <div id="story-ui" class="overlay">
+        <button class="exit-btn" onclick="AppUI.close('story-ui')">← ÇIKIŞ</button>
+        <div class="iphone-card">
+            <h2 style="margin-bottom: 1.5rem; font-weight: 300;">Anlatı</h2>
+            <textarea id="st-input" class="iphone-input" rows="3" placeholder="Bugünü ölümsüzleştirin..."></textarea>
+            <button class="btn-custom" style="width: 100%;" onclick="Stories.post()">Paylaşımı Tamamla</button>
+            <div id="story-feed"></div>
+        </div>
+    </div>
+
+    <!-- Ses Kaynağı -->
+    <audio id="bg-audio" loop src="https://files.catbox.moe/0u3f2b.mp3"></audio>
+
+    <script>
+        /** SUPABASE CONFIG **/
+        const SB_URL = 'https://oxbmgiiyyxuwwitudtru.supabase.co';
+        const SB_KEY = 'sb_publishable_qYUzpHdAnO-C4xYwUF3wdg_v_zZzYif';
+        const supa = supabase.createClient(SB_URL, SB_KEY);
+
+        /** GLOBAL 3D STATE MANAGER **/
+        const ActiveModule = {
+            renderer: null, frameId: null, scene: null, camera: null,
+            cleanup() {
+                if (this.frameId) cancelAnimationFrame(this.frameId);
+                if (this.renderer) {
+                    this.renderer.dispose();
+                    if (this.renderer.domElement) this.renderer.domElement.remove();
+                }
+                if (this.scene) {
+                    this.scene.traverse(obj => {
+                        if (obj.geometry) obj.geometry.dispose();
+                        if (obj.material) {
+                            if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+                            else obj.material.dispose();
+                        }
+                    });
+                }
+                this.renderer = this.scene = this.camera = this.frameId = null;
+            }
+        };
+
+        /** UI CONTROLLER **/
+        const AppUI = {
+            open(id) {
+                document.getElementById(id).style.display = 'flex';
+                if (id === 'snake-ui') SnakeEngine.init();
+                if (id === 'heart-ui') HeartEngine.init();
+                if (id === 'story-ui') Stories.load();
+            },
+            close(id) {
+                document.getElementById(id).style.display = 'none';
+                ActiveModule.cleanup();
+            }
+        };
+
+        /** MODULE: 3D HEART ENGINE **/
+        const HeartEngine = {
+            init() {
+                const box = document.getElementById('heart-canvas-box');
+                ActiveModule.scene = new THREE.Scene();
+                ActiveModule.camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+                ActiveModule.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                ActiveModule.renderer.setSize(window.innerWidth, window.innerHeight);
+                box.appendChild(ActiveModule.renderer.domElement);
+
+                const pts = [];
+                for (let i = 0; i < 8000; i++) {
+                    const t = Math.random() * Math.PI * 2;
+                    const x = 16 * Math.pow(Math.sin(t), 3);
+                    const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+                    pts.push(new THREE.Vector3(x*0.22, y*0.22, (Math.random()-0.5)*5));
+                }
+                const heart = new THREE.Points(
+                    new THREE.BufferGeometry().setFromPoints(pts),
+                    new THREE.PointsMaterial({ size: 0.05, color: 0xa36a4d, transparent: true, opacity: 0.8 })
+                );
+                ActiveModule.scene.add(heart);
+                ActiveModule.camera.position.z = 12;
+
+                const animate = () => {
+                    ActiveModule.frameId = requestAnimationFrame(animate);
+                    heart.rotation.y += 0.01;
+                    ActiveModule.renderer.render(ActiveModule.scene, ActiveModule.camera);
+                };
+                animate();
+            }
+        };
+
+        /** MODULE: 3D SNAKE ENGINE **/
+        const SnakeEngine = {
+            snake: [], dir: null, nextDir: null, food: null, score: 0, lastMove: 0,
+            init() {
+                const box = document.getElementById('snake-canvas-box');
+                ActiveModule.scene = new THREE.Scene();
+                ActiveModule.camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+                ActiveModule.renderer = new THREE.WebGLRenderer({ antialias: true });
+                ActiveModule.renderer.setSize(window.innerWidth, window.innerHeight);
+                box.appendChild(ActiveModule.renderer.domElement);
+
+                ActiveModule.scene.add(new THREE.GridHelper(20, 20, 0x444444, 0x222222));
+                this.snake = [this.createCube(0, 0, 0, 0xff007f)];
+                this.dir = new THREE.Vector3(1, 0, 0);
+                this.nextDir = this.dir.clone();
+                this.score = 0;
+                this.lastMove = 0;
+                document.getElementById('snake-score').innerText = '0';
+                this.spawnFood();
+
+                ActiveModule.camera.position.set(0, 15, 12);
+                ActiveModule.camera.lookAt(0, 0, 0);
+                window.addEventListener('keydown', this.keys);
+                this.loop(0);
+            },
+            createCube(x, y, z, color) {
+                const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.9), new THREE.MeshBasicMaterial({ color }));
+                mesh.position.set(x, 0.5, z);
+                ActiveModule.scene.add(mesh);
+                return mesh;
+            },
+            spawnFood() {
+                if (this.food) ActiveModule.scene.remove(this.food);
+                this.food = this.createCube(Math.floor(Math.random()*19-9), 0.5, Math.floor(Math.random()*19-9), 0xffbf00);
+            },
+            keys(e) {
+                const s = SnakeEngine;
+                if (e.key === 'ArrowUp' && s.dir.z === 0) s.nextDir.set(0,0,-1);
+                if (e.key === 'ArrowDown' && s.dir.z === 0) s.nextDir.set(0,0,1);
+                if (e.key === 'ArrowLeft' && s.dir.x === 0) s.nextDir.set(-1,0,0);
+                if (e.key === 'ArrowRight' && s.dir.x === 0) s.nextDir.set(1,0,0);
+            },
+            setDir(x,y,z) {
+                const v = new THREE.Vector3(x,y,z);
+                if (this.dir.dot(v) === 0) this.nextDir.copy(v);
+            },
+            loop(t) {
+                ActiveModule.frameId = requestAnimationFrame(SnakeEngine.loop);
+                if (t - SnakeEngine.lastMove > 150) {
+                    SnakeEngine.dir.copy(SnakeEngine.nextDir);
+                    const headPos = SnakeEngine.snake[0].position.clone().add(SnakeEngine.dir);
+
+                    if (Math.abs(headPos.x) > 10 || Math.abs(headPos.z) > 10 || SnakeEngine.snake.some(p => p.position.distanceTo(headPos) < 0.1)) {
+                        alert("OYUN BİTTİ! Skor: " + SnakeEngine.score);
+                        AppUI.close('snake-ui');
+                        return;
+                    }
+
+                    const newHead = SnakeEngine.createCube(headPos.x, headPos.y, headPos.z, 0xff007f);
+                    SnakeEngine.snake.unshift(newHead);
+
+                    if (headPos.distanceTo(SnakeEngine.food.position) < 0.5) {
+                        SnakeEngine.score += 10;
+                        document.getElementById('snake-score').innerText = SnakeEngine.score;
+                        SnakeEngine.spawnFood();
+                    } else {
+                        const tail = SnakeEngine.snake.pop();
+                        ActiveModule.scene.remove(tail);
+                        tail.geometry.dispose();
+                    }
+                    SnakeEngine.lastMove = t;
+                }
+                ActiveModule.renderer.render(ActiveModule.scene, ActiveModule.camera);
+            }
+        };
+
+        /** AI IMAGE ENGINE **/
+        const AI = {
+            async generate() {
+                const p = document.getElementById('ai-prompt').value;
+                if (!p) return alert("Lütfen bir prompt girin.");
+                const status = document.getElementById('ai-status');
+                status.style.display = 'block';
+
+                const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?width=1024&height=1024&nologo=true&seed=${Math.random()}`;
+                const img = new Image();
+                img.src = url;
+                img.className = 'gallery-img';
+                img.onload = () => {
+                    status.style.display = 'none';
+                    document.getElementById('ai-gallery').prepend(img);
+                };
+                img.onerror = () => {
+                    status.style.display = 'none';
+                    alert("Görsel oluşturulamadı.");
+                };
+            }
+        };
+
+        /** SUPABASE STORIES **/
+        const Stories = {
+            async post() {
+                const txt = document.getElementById('st-input').value.trim();
+                if (!txt) return;
+                try {
+                    const { error } = await supa.from('stories').insert([{ content: txt }]);
+                    if (error) throw error;
+                    document.getElementById('st-input').value = '';
+                    this.load();
+                } catch(e) { alert("Hata: " + e.message); }
+            },
+            async load() {
+                const feed = document.getElementById('story-feed');
+                try {
+                    const { data, error } = await supa.from('stories').select('*').order('created_at', { ascending: false });
+                    if (data) {
+                        feed.innerHTML = data.map(s => `
+                            <div class="story-item">
+                                <small style="color:var(--neon-pink); font-size:10px;">${new Date(s.created_at).toLocaleTimeString()}</small>
+                                <p style="margin-top:5px; font-size:14.5px;">${s.content}</p>
+                            </div>
+                        `).join('');
+                    }
+                } catch(e) { console.error(e); }
+            }
+        };
+
+        /** MEDIA CONTROLLER (MODERN SADE VERSİYON) **/
+        const Media = {
+            toggle() {
+                const audio = document.getElementById('bg-audio');
+                const playSvg = document.getElementById('play-svg');
+                const pauseSvg = document.getElementById('pause-svg');
+
+                if (audio.paused) {
+                    audio.play().then(() => { 
+                        playSvg.style.display = 'none';
+                        pauseSvg.style.display = 'block';
+                    })
+                    .catch(() => alert("Lütfen etkileşimde bulunun."));
+                } else {
+                    audio.pause();
+                    playSvg.style.display = 'block';
+                    pauseSvg.style.display = 'none';
+                }
+            }
+        };
+
+        /** AVATAR UPLOAD **/
+        document.getElementById('pfp-upload').onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const loader = document.getElementById('pfp-loader');
+            const imgPreview = document.getElementById('pfp-img');
+            loader.style.display = 'flex';
+            const reader = new FileReader();
+            reader.onload = (ev) => imgPreview.src = ev.target.result;
+            reader.readAsDataURL(file);
+            try {
+                const fileName = `pfp_${Date.now()}.png`;
+                await supa.storage.from('avatars').upload(fileName, file);
+            } catch(err) { console.error(err); } 
+            finally { loader.style.display = 'none'; }
+        };
+    </script>
+</body>
+</html>
