@@ -2,512 +2,356 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Axellizm | High-End Experience</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AXELLIZM v1.6</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Google Fonts & Libraries -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         :root {
-            --bg-color: #050505;
-            --accent-pink: #643F23;
-            --soft-pink: #a36a4d;
-            --neon-pink: #ff007f;
-            /* Yeni Tema Renkleri (Müzik Çalar İçin) */
-            --classic-black: #0a0a0a;
-            --deep-red: #8b0000;
-            --glass-black: rgba(0, 0, 0, 0.85);
-            --glass-yellow: rgba(255, 191, 0, 0.15);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --text-main: #ffffff;
-            --text-dim: rgba(255, 255, 255, 0.6);
-            --transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            --neon: #ff0055; --blue: #00e5ff; --bg: #060606;
+            --glass: rgba(18, 18, 18, 0.9); --border: rgba(255, 255, 255, 0.1);
+            --text: #ffffff; --card-bg: rgba(25, 25, 25, 0.7);
         }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); overflow: hidden; height: 100vh; position: fixed; width: 100%; }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; outline: none; }
-        body { background-color: var(--bg-color); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .scene { position: fixed; inset: 0; padding: 40px 20px 380px; opacity: 0; transform: translateY(20px); transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); overflow-y: auto; pointer-events: none; visibility: hidden; }
+        .scene.active { opacity: 1; transform: translateY(0); pointer-events: auto; visibility: visible; }
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 32px; padding: 22px; backdrop-filter: blur(40px); margin-bottom: 20px; }
 
-        /* Arka Plan Glow Animasyonu */
-        #bg-glow {
-            position: fixed; inset: 0; z-index: -1;
-            background: radial-gradient(circle at bottom right, var(--accent-pink) 0%, var(--bg-color) 70%);
-            animation: bgPulse 10s ease-in-out infinite alternate;
-        }
-        @keyframes bgPulse { from { opacity: 0.7; } to { opacity: 1; } }
+        .nav-dock { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--glass); border: 1px solid var(--border); padding: 12px 25px; border-radius: 45px; display: flex; gap: 20px; z-index: 1000; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+        .nav-item { font-size: 1.5rem; color: #555; cursor: pointer; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; }
+        .nav-item.active { color: var(--neon); transform: translateY(-12px); text-shadow: 0 0 15px var(--neon); }
 
-        /* Sağ Üst Profil */
-        .avatar-container { position: fixed; top: 2rem; right: 2rem; z-index: 1000; }
-        .avatar-wrapper {
-            width: 75px; height: 75px; border-radius: 50%; border: 2px solid var(--glass-border);
-            overflow: hidden; cursor: pointer; transition: var(--transition); background: #111;
-            position: relative; display: flex; align-items: center; justify-content: center;
-        }
-        .avatar-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-        .pfp-loader { position: absolute; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; font-size: 10px; }
+        #toast { position: fixed; top: 40px; left: 50%; transform: translateX(-50%) translateY(-200px); background: var(--glass); border: 1px solid var(--border); padding: 15px 30px; border-radius: 20px; z-index: 10000; transition: 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55); opacity: 0; font-weight: 600; text-align: center; width: 80%; }
+        #toast.active { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-        /* Ana İçerik */
-        main { text-align: center; max-width: 600px; padding: 2rem; z-index: 10; width: 100%; }
-        h1 { font-size: clamp(2.5rem, 8vw, 4rem); font-weight: 600; letter-spacing: -3px; margin-bottom: 0.5rem; }
-        .subtitle { color: var(--text-dim); font-size: 1.1rem; margin-bottom: 3rem; font-weight: 300; }
+        .chat-panel { position: fixed; bottom: 175px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 450px; height: 200px; background: var(--glass); border: 1px solid var(--border); border-radius: 30px; display: flex; flex-direction: column; z-index: 900; overflow: hidden; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; scroll-behavior: smooth; }
+        .msg { max-width: 85%; padding: 10px 18px; border-radius: 22px; font-size: 0.82rem; }
+        .msg.bot { align-self: flex-start; background: rgba(255,255,255,0.07); border-bottom-left-radius: 4px; }
+        .msg.user { align-self: flex-end; background: var(--neon); color: white; border-bottom-right-radius: 4px; }
 
-        /* Butonlar */
-        .btn-stack { display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 360px; margin: 0 auto; }
-        .btn-custom {
-            padding: 1.3rem; background: linear-gradient(135deg, var(--glass-black), var(--glass-yellow));
-            backdrop-filter: blur(25px); border: 1px solid var(--glass-border); border-radius: 25px;
-            color: #fff; text-transform: uppercase; letter-spacing: 4px; font-size: 0.8rem; cursor: pointer; transition: var(--transition);
-        }
-        .btn-custom:hover { transform: translateY(-5px); border-color: var(--neon-pink); box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
-
-        /* =========================================
-           YENİ KLASİK MÜZİK ÇALAR PANELİ
-           ========================================= */
-        .music-panel-v3 {
-            margin: 3.5rem auto 0;
-            display: flex;
-            align-items: center;
-            gap: 1.2rem;
-            background: rgba(10, 10, 10, 0.95);
-            backdrop-filter: blur(15px);
-            padding: 10px 22px;
-            border-radius: 18px;
-            border: 1px solid rgba(139, 0, 0, 0.3); /* Tok Kırmızı Detay */
-            width: fit-content;
-            max-width: 380px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.8);
-            transition: var(--transition);
-        }
-
-        .music-panel-v3:hover {
-            border-color: var(--deep-red);
-            transform: translateY(-2px);
-        }
-
-        .m-v3-cover {
-            width: 50px;
-            height: 50px;
-            border-radius: 10px;
-            overflow: hidden;
-            flex-shrink: 0;
-            background: #111;
-        }
-
-        .m-v3-cover img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .m-v3-info {
-            text-align: left;
-            min-width: 120px;
-        }
-
-        .m-v3-title {
-            display: block;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #fff;
-            letter-spacing: 0.3px;
-        }
-
-        .m-v3-artist {
-            display: block;
-            font-size: 0.7rem;
-            color: #777;
-            margin-top: 2px;
-        }
-
-        .m-v3-controls {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-left: 10px;
-        }
-
-        .m-v3-play-btn {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: var(--deep-red);
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: 0.3s ease;
-            color: white;
-        }
-
-        .m-v3-play-btn:hover {
-            background: #a00000;
-            transform: scale(1.08);
-        }
-
-        .m-v3-play-btn svg {
-            width: 20px;
-            height: 20px;
-            fill: currentColor;
-        }
-
-        /* Overlay Modüller */
-        .overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 2000;
-            display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(20px);
-        }
-        .exit-btn {
-            position: absolute; top: 2.5rem; left: 2.5rem; background: rgba(255,255,255,0.05); color: #fff;
-            border: 1px solid var(--glass-border); padding: 0.8rem 1.8rem; border-radius: 15px; cursor: pointer; z-index: 2100;
-        }
-        .exit-btn:hover { background: #fff; color: #000; }
-
-        /* Kartlar (Story & AI) */
-        .iphone-card {
-            width: 90%; max-width: 440px; background: rgba(20,20,20,0.8); border-radius: 40px;
-            padding: 2.5rem; border: 1px solid var(--glass-border); backdrop-filter: blur(40px);
-        }
-        .iphone-input {
-            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
-            padding: 1.2rem; border-radius: 20px; color: #fff; margin-bottom: 1.5rem; font-size: 1rem;
-        }
-
-        /* Yılan Oyunu HUD */
-        #snake-score { position: absolute; top: 2.5rem; right: 2.5rem; font-size: 3rem; font-weight: 600; color: var(--neon-pink); }
-        .dpad { display: none; position: absolute; bottom: 2rem; grid-template-areas: ". u ." "l d r"; gap: 12px; }
-        @media (max-width: 768px) { .dpad { display: grid; } }
-        .d-btn { width: 65px; height: 65px; background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; }
-
-        /* Feed Alanları */
-        #story-feed, #ai-gallery { margin-top: 1rem; max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; scrollbar-width: none; }
-        .story-item { background: rgba(255,255,255,0.03); padding: 1.2rem; border-radius: 18px; border-left: 4px solid var(--neon-pink); text-align: left; }
-        .gallery-img { width: 100%; border-radius: 15px; border: 1px solid var(--glass-border); }
+        .btn-action { background: var(--neon); color: white; border: none; padding: 15px; border-radius: 20px; font-weight: 800; cursor: pointer; width: 100%; transition: 0.2s; }
+        .btn-action:disabled { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; }
+        
+        input { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: #fff; padding: 15px; border-radius: 20px; width: 100%; font-size: 1rem; margin-bottom: 12px; }
+        .joy-btn { width: 70px; height: 70px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; touch-action: manipulation; }
     </style>
 </head>
 <body>
 
-    <div id="bg-glow"></div>
+    <div id="toast">Yükleniyor...</div>
 
-    <!-- Profil Bölümü -->
-    <nav class="avatar-container">
-        <label for="pfp-upload" class="avatar-wrapper" id="pfp-trigger">
-            <img id="pfp-img" src="https://api.dicebear.com/7.x/shapes/svg?seed=Axellizm" alt="Profil">
-            <div class="pfp-loader" id="pfp-loader">...</div>
-        </label>
-        <input type="file" id="pfp-upload" hidden accept="image/*">
+    <div id="auth-overlay" style="position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center; backdrop-filter: blur(10px);">
+        <div class="card" style="width:90%; max-width:400px; text-align:center;">
+            <h1 style="font-family:'Syne'; font-size: 2.5rem; margin-bottom:25px;">AXELL<span style="color:var(--neon)">IZM</span></h1>
+            <input type="email" id="auth-email" placeholder="E-posta">
+            <div style="position:relative; width:100%;">
+                <input type="password" id="auth-pass" placeholder="Şifre">
+                <i class="fa-solid fa-eye" style="position:absolute; right:15px; top:18px; color:#666;" onclick="AuthSvc.togglePass()"></i>
+            </div>
+            <div id="auth-error" style="color:var(--neon); font-size: 0.75rem; margin-bottom: 10px; min-height: 15px;"></div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                <button class="btn-action" id="btn-login" onclick="AuthSvc.login()">GİRİŞ</button>
+                <button class="btn-action" id="btn-reg" style="background:var(--blue)" onclick="AuthSvc.register()">KAYIT</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-container">
+        <section class="scene active" id="scene-home">
+            <div class="card" style="border-left: 5px solid var(--neon);">
+                <h1 style="font-family:'Syne'; font-size: 1.6rem;">MERHABA, <span id="user-display" style="color:var(--neon)">USER</span></h1>
+                <p style="opacity:0.5; font-size:0.75rem;">Status: <span style="color:var(--blue)">Online</span></p>
+            </div>
+            <div id="home-heart" style="height:280px; touch-action: none;"></div>
+            <div class="card" onclick="Router.go('game')" style="cursor:pointer; display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-family:'Syne'">NEURAL SNAKE</span>
+                <i class="fa-solid fa-chevron-right" style="color:var(--blue)"></i>
+            </div>
+        </section>
+
+        <section class="scene" id="scene-game">
+            <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding: 15px 25px;">
+                <span style="font-weight: 800; font-family:'Syne'">POINTS: <span id="score" style="color:var(--neon)">0</span></span>
+                <span style="font-size:0.7rem; opacity:0.5;">BEST: <span id="best-score">0</span></span>
+            </div>
+            <div class="card" style="padding:0; aspect-ratio:1/1; overflow: hidden; background: #000;">
+                <canvas id="snake-canvas"></canvas>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); justify-items:center; align-items:center; margin-top:15px;">
+                <div class="joy-btn" style="grid-column:2;" onclick="SnakeGame.setDir('UP')"><i class="fa-solid fa-caret-up"></i></div>
+                <div class="joy-btn" style="grid-column:1;" onclick="SnakeGame.setDir('LEFT')"><i class="fa-solid fa-caret-left"></i></div>
+                <div class="joy-btn" style="grid-column:2;" onclick="SnakeGame.setDir('DOWN')"><i class="fa-solid fa-caret-down"></i></div>
+                <div class="joy-btn" style="grid-column:3;" onclick="SnakeGame.setDir('RIGHT')"><i class="fa-solid fa-caret-right"></i></div>
+            </div>
+        </section>
+
+        <section class="scene" id="scene-social">
+            <div class="card">
+                <h3 style="font-family:'Syne'; margin-bottom:15px;">BAĞLANTILARIM</h3>
+                <div id="rel-list"></div>
+            </div>
+            <div class="card">
+                <h4 style="margin-bottom:10px;">YENİ İSTEK</h4>
+                <input type="text" id="rel-email" placeholder="E-posta">
+                <button class="btn-action" onclick="SocialSvc.sendRequest()">İSTEK GÖNDER</button>
+            </div>
+        </section>
+
+        <section class="scene" id="scene-profile">
+            <div class="card" style="text-align:center;">
+                <img src="" id="p-avatar" style="width:120px; height:120px; border-radius:50%; border:4px solid var(--neon); object-fit: cover; background: #111;">
+                <input type="file" id="p-up" hidden accept="image/*" onchange="ProfileSvc.handleUpload(this)">
+                <p onclick="document.getElementById('p-up').click()" style="color:var(--blue); font-size:0.8rem; margin:15px; cursor:pointer; font-weight:700;">FOTOĞRAFI DEĞİŞTİR</p>
+                <input type="text" id="p-nick-i" placeholder="Kullanıcı Adı">
+                <button class="btn-action" onclick="ProfileSvc.save()">KAYDET</button>
+                <button class="btn-action" style="background:transparent; color:#666; margin-top:10px;" onclick="AuthSvc.logout()">ÇIKIŞ YAP</button>
+            </div>
+        </section>
+    </div>
+
+    <div class="chat-panel">
+        <div class="chat-messages" id="chat-flow"></div>
+        <div style="padding:10px; display:flex; gap:10px; background: rgba(0,0,0,0.3);">
+            <input type="text" id="chat-in" placeholder="Yaz..." style="margin:0; border-radius:15px;" onkeypress="if(event.key==='Enter') ChatSvc.send()">
+            <button onclick="ChatSvc.send()" style="background:var(--neon); border:none; width:50px; border-radius:15px; color:#fff;"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <nav class="nav-dock">
+        <div class="nav-item active" data-target="home" onclick="Router.go('home')"><i class="fa-solid fa-bahai"></i></div>
+        <div class="nav-item" data-target="game" onclick="Router.go('game')"><i class="fa-solid fa-ghost"></i></div>
+        <div class="nav-item" data-target="social" onclick="Router.go('social')"><i class="fa-solid fa-user-group"></i></div>
+        <div class="nav-item" data-target="profile" onclick="Router.go('profile')"><i class="fa-solid fa-atom"></i></div>
     </nav>
 
-    <main>
-        <h1>Axellizm</h1>
-        <p class="subtitle">Minimalist dijital ekosistem ve gelişmiş modüler deneyim.</p>
-        
-        <div class="btn-stack">
-            <button class="btn-custom" onclick="AppUI.open('snake-ui')">Yılan Oyunu</button>
-            <button class="btn-custom" onclick="AppUI.open('heart-ui')">3D Kalp Parçacıkları</button>
-            <button class="btn-custom" onclick="AppUI.open('ai-ui')">Görsel Oluşturun</button>
-            <button class="btn-custom" onclick="AppUI.open('story-ui')">Story Paneli</button>
-        </div>
-
-        <!-- MODERN KLASİK MÜZİK ÇALAR -->
-        <div class="music-panel-v3">
-            <div class="m-v3-cover">
-                <img src="https://i.pinimg.com/564x/0a/61/80/0a61803f295171789c636f3d9b07137b.jpg" alt="Cover">
-            </div>
-            <div class="m-v3-info">
-                <span class="m-v3-title">Axellizm Special</span>
-                <span class="m-v3-artist">Deha Tuzcu - Alacarte</span>
-            </div>
-            <div class="m-v3-controls">
-                <button class="m-v3-play-btn" id="m-toggle" onclick="Media.toggle()">
-                    <svg id="play-svg" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                    <svg id="pause-svg" viewBox="0 0 24 24" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-                </button>
-            </div>
-        </div>
-    </main>
-
-    <!-- Overlay Modülleri (Dokunulmadı) -->
-    <div id="snake-ui" class="overlay">
-        <button class="exit-btn" onclick="AppUI.close('snake-ui')">← ÇIKIŞ</button>
-        <div id="snake-score">0</div>
-        <div id="snake-canvas-box" style="width: 100%; height: 100%;"></div>
-        <div class="dpad">
-            <div class="d-btn" style="grid-area: u;" onclick="SnakeEngine.setDir(0,0,-1)">↑</div>
-            <div class="d-btn" style="grid-area: l;" onclick="SnakeEngine.setDir(-1,0,0)">←</div>
-            <div class="d-btn" style="grid-area: d;" onclick="SnakeEngine.setDir(0,0,1)">↓</div>
-            <div class="d-btn" style="grid-area: r;" onclick="SnakeEngine.setDir(1,0,0)">→</div>
-        </div>
-    </div>
-
-    <div id="heart-ui" class="overlay">
-        <button class="exit-btn" onclick="AppUI.close('heart-ui')">← ÇIKIŞ</button>
-        <div id="heart-canvas-box" style="width: 100%; height: 100%;"></div>
-    </div>
-
-    <div id="ai-ui" class="overlay">
-        <button class="exit-btn" onclick="AppUI.close('ai-ui')">← ÇIKIŞ</button>
-        <div class="iphone-card">
-            <h2 style="margin-bottom: 1.5rem; font-weight: 300;">AI Vision</h2>
-            <textarea id="ai-prompt" class="iphone-input" rows="3" placeholder="Hayalinizi betimleyin..."></textarea>
-            <button class="btn-custom" style="width: 100%;" onclick="AI.generate()">Görsel Oluşturun</button>
-            <div id="ai-status" style="margin-top: 15px; font-size: 0.75rem; color: var(--neon-pink); display: none;">İlham alınıyor...</div>
-            <div id="ai-gallery"></div>
-        </div>
-    </div>
-
-    <div id="story-ui" class="overlay">
-        <button class="exit-btn" onclick="AppUI.close('story-ui')">← ÇIKIŞ</button>
-        <div class="iphone-card">
-            <h2 style="margin-bottom: 1.5rem; font-weight: 300;">Anlatı</h2>
-            <textarea id="st-input" class="iphone-input" rows="3" placeholder="Bugünü ölümsüzleştirin..."></textarea>
-            <button class="btn-custom" style="width: 100%;" onclick="Stories.post()">Paylaşımı Tamamla</button>
-            <div id="story-feed"></div>
-        </div>
-    </div>
-
-    <!-- Ses Kaynağı -->
-    <audio id="bg-audio" loop src="https://files.catbox.moe/0u3f2b.mp3"></audio>
-
     <script>
-        /** SUPABASE CONFIG **/
-        const SB_URL = 'https://oxbmgiiyyxuwwitudtru.supabase.co';
-        const SB_KEY = 'sb_publishable_qYUzpHdAnO-C4xYwUF3wdg_v_zZzYif';
-        const supa = supabase.createClient(SB_URL, SB_KEY);
+        const SB_URL = "https://oxbmgiiyyxuwwitudtru.supabase.co";
+        const SB_KEY = "sb_publishable_qYUzpHdAnO-C4xYwUF3wdg_v_zZzYif";
+        const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
-        /** GLOBAL 3D STATE MANAGER **/
-        const ActiveModule = {
-            renderer: null, frameId: null, scene: null, camera: null,
-            cleanup() {
-                if (this.frameId) cancelAnimationFrame(this.frameId);
-                if (this.renderer) {
-                    this.renderer.dispose();
-                    if (this.renderer.domElement) this.renderer.domElement.remove();
-                }
-                if (this.scene) {
-                    this.scene.traverse(obj => {
-                        if (obj.geometry) obj.geometry.dispose();
-                        if (obj.material) {
-                            if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
-                            else obj.material.dispose();
-                        }
-                    });
-                }
-                this.renderer = this.scene = this.camera = this.frameId = null;
+        let currentUser = null;
+        let userHighScore = 0;
+        const getClr = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+        const Utils = {
+            toast: (m) => {
+                const t = document.getElementById('toast'); t.innerText = m;
+                t.classList.add('active'); setTimeout(() => t.classList.remove('active'), 3500);
+            },
+            setLoading: (id, s) => {
+                const b = document.getElementById(id); if(!b) return;
+                b.disabled = s; b.innerText = s ? "BEKLEYİN..." : (id==='btn-login'?"GİRİŞ":"KAYIT");
             }
         };
 
-        /** UI CONTROLLER **/
-        const AppUI = {
-            open(id) {
-                document.getElementById(id).style.display = 'flex';
-                if (id === 'snake-ui') SnakeEngine.init();
-                if (id === 'heart-ui') HeartEngine.init();
-                if (id === 'story-ui') Stories.load();
-            },
-            close(id) {
-                document.getElementById(id).style.display = 'none';
-                ActiveModule.cleanup();
+        const Router = {
+            go(id) {
+                document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+                document.getElementById(`scene-${id}`).classList.add('active');
+                document.querySelectorAll('.nav-item').forEach(it => {
+                    it.classList.toggle('active', it.getAttribute('data-target') === id);
+                });
+                id === 'home' ? Heart3D.resume() : Heart3D.pause();
+                id === 'game' ? SnakeGame.start() : SnakeGame.stop();
+                if(id === 'social') SocialSvc.loadRelations();
             }
         };
 
-        /** MODULE: 3D HEART ENGINE **/
-        const HeartEngine = {
-            init() {
-                const box = document.getElementById('heart-canvas-box');
-                ActiveModule.scene = new THREE.Scene();
-                ActiveModule.camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-                ActiveModule.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-                ActiveModule.renderer.setSize(window.innerWidth, window.innerHeight);
-                box.appendChild(ActiveModule.renderer.domElement);
-
-                const pts = [];
-                for (let i = 0; i < 8000; i++) {
-                    const t = Math.random() * Math.PI * 2;
-                    const x = 16 * Math.pow(Math.sin(t), 3);
-                    const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
-                    pts.push(new THREE.Vector3(x*0.22, y*0.22, (Math.random()-0.5)*5));
+        const AuthSvc = {
+            togglePass() { const p = document.getElementById('auth-pass'); p.type = p.type === 'password' ? 'text' : 'password'; },
+            async login() {
+                const e = document.getElementById('auth-email').value;
+                const p = document.getElementById('auth-pass').value;
+                Utils.setLoading('btn-login', true);
+                const { data, error } = await _supabase.auth.signInWithPassword({ email: e, password: p });
+                if(error) { Utils.setLoading('btn-login', false); return document.getElementById('auth-error').innerText = error.message; }
+                await this.initSession(data.user);
+            },
+            async register() {
+                const e = document.getElementById('auth-email').value;
+                const p = document.getElementById('auth-pass').value;
+                Utils.setLoading('btn-reg', true);
+                const { data, error } = await _supabase.auth.signUp({ email: e, password: p });
+                if(error) { Utils.setLoading('btn-reg', false); return document.getElementById('auth-error').innerText = error.message; }
+                await _supabase.from('profiles').upsert({ id: data.user.id, email: e, username: e.split('@')[0] });
+                await this.login();
+            },
+            async logout() {
+                await _supabase.auth.signOut();
+                window.location.reload();
+            },
+            async initSession(user) {
+                currentUser = user;
+                const { data } = await _supabase.from('profiles').select('*').eq('id', user.id).single();
+                if(data) {
+                    document.getElementById('user-display').innerText = (data.username || "USER").toUpperCase();
+                    document.getElementById('p-avatar').src = data.avatar_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${user.id}`;
+                    userHighScore = data.high_score || 0;
+                    document.getElementById('best-score').innerText = userHighScore;
                 }
-                const heart = new THREE.Points(
-                    new THREE.BufferGeometry().setFromPoints(pts),
-                    new THREE.PointsMaterial({ size: 0.05, color: 0xa36a4d, transparent: true, opacity: 0.8 })
-                );
-                ActiveModule.scene.add(heart);
-                ActiveModule.camera.position.z = 12;
-
-                const animate = () => {
-                    ActiveModule.frameId = requestAnimationFrame(animate);
-                    heart.rotation.y += 0.01;
-                    ActiveModule.renderer.render(ActiveModule.scene, ActiveModule.camera);
-                };
-                animate();
+                gsap.to("#auth-overlay", { opacity: 0, scale: 1.1, duration: 0.6, onComplete: () => {
+                    document.getElementById('auth-overlay').style.display = 'none';
+                    Heart3D.init(); Router.go('home'); ChatSvc.loadHistory();
+                }});
             }
         };
 
-        /** MODULE: 3D SNAKE ENGINE **/
-        const SnakeEngine = {
-            snake: [], dir: null, nextDir: null, food: null, score: 0, lastMove: 0,
-            init() {
-                const box = document.getElementById('snake-canvas-box');
-                ActiveModule.scene = new THREE.Scene();
-                ActiveModule.camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-                ActiveModule.renderer = new THREE.WebGLRenderer({ antialias: true });
-                ActiveModule.renderer.setSize(window.innerWidth, window.innerHeight);
-                box.appendChild(ActiveModule.renderer.domElement);
+        const SnakeGame = {
+            canvas: document.getElementById('snake-canvas'), ctx: null,
+            box: 20, snake: [], food: null, dir: 'RIGHT', active: false,
+            lastTime: 0, speed: 120, resizeHandler: null,
+            start() {
+                this.ctx = this.canvas.getContext('2d');
+                this.resize(); this.active = true;
+                this.snake = [{x: 10 * this.box, y: 10 * this.box}];
+                this.spawnFood(); this.render();
+                this.resizeHandler = () => this.resize();
+                window.addEventListener('resize', this.resizeHandler);
+            },
+            stop() { this.active = false; window.removeEventListener('resize', this.resizeHandler); },
+            resize() {
+                const s = Math.floor(this.canvas.parentElement.clientWidth);
+                this.canvas.width = s; this.canvas.height = s;
+                this.box = Math.floor(s / 20);
+            },
+            spawnFood() { this.food = { x: Math.floor(Math.random()*19)*this.box, y: Math.floor(Math.random()*19)*this.box }; },
+            setDir(d) {
+                if(d==='UP'&&this.dir!=='DOWN')this.dir=d; if(d==='DOWN'&&this.dir!=='UP')this.dir=d;
+                if(d==='LEFT'&&this.dir!=='RIGHT')this.dir=d; if(d==='RIGHT'&&this.dir!=='LEFT')this.dir=d;
+            },
+            render(t) {
+                if(!this.active) return;
+                requestAnimationFrame((time) => this.render(time));
+                if(t - this.lastTime < this.speed) return;
+                this.lastTime = t;
+                this.ctx.fillStyle = "#000"; this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
+                this.snake.forEach((p, i) => {
+                    this.ctx.fillStyle = i === 0 ? getClr('--neon') : "rgba(255,255,255,0.1)";
+                    this.ctx.fillRect(p.x, p.y, this.box-1, this.box-1);
+                });
+                this.ctx.fillStyle = getClr('--blue'); this.ctx.fillRect(this.food.x, this.food.y, this.box-1, this.box-1);
+                let h = {...this.snake[0]};
+                if(this.dir==='UP') h.y -= this.box; if(this.dir==='DOWN') h.y += this.box;
+                if(this.dir==='LEFT') h.x -= this.box; if(this.dir==='RIGHT') h.x += this.box;
+                
+                if(h.x === this.food.x && h.y === this.food.y) {
+                    this.spawnFood(); document.getElementById('score').innerText = this.snake.length;
+                } else { this.snake.pop(); }
 
-                ActiveModule.scene.add(new THREE.GridHelper(20, 20, 0x444444, 0x222222));
-                this.snake = [this.createCube(0, 0, 0, 0xff007f)];
-                this.dir = new THREE.Vector3(1, 0, 0);
-                this.nextDir = this.dir.clone();
-                this.score = 0;
-                this.lastMove = 0;
-                document.getElementById('snake-score').innerText = '0';
-                this.spawnFood();
-
-                ActiveModule.camera.position.set(0, 15, 12);
-                ActiveModule.camera.lookAt(0, 0, 0);
-                window.addEventListener('keydown', this.keys);
-                this.loop(0);
-            },
-            createCube(x, y, z, color) {
-                const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.9), new THREE.MeshBasicMaterial({ color }));
-                mesh.position.set(x, 0.5, z);
-                ActiveModule.scene.add(mesh);
-                return mesh;
-            },
-            spawnFood() {
-                if (this.food) ActiveModule.scene.remove(this.food);
-                this.food = this.createCube(Math.floor(Math.random()*19-9), 0.5, Math.floor(Math.random()*19-9), 0xffbf00);
-            },
-            keys(e) {
-                const s = SnakeEngine;
-                if (e.key === 'ArrowUp' && s.dir.z === 0) s.nextDir.set(0,0,-1);
-                if (e.key === 'ArrowDown' && s.dir.z === 0) s.nextDir.set(0,0,1);
-                if (e.key === 'ArrowLeft' && s.dir.x === 0) s.nextDir.set(-1,0,0);
-                if (e.key === 'ArrowRight' && s.dir.x === 0) s.nextDir.set(1,0,0);
-            },
-            setDir(x,y,z) {
-                const v = new THREE.Vector3(x,y,z);
-                if (this.dir.dot(v) === 0) this.nextDir.copy(v);
-            },
-            loop(t) {
-                ActiveModule.frameId = requestAnimationFrame(SnakeEngine.loop);
-                if (t - SnakeEngine.lastMove > 150) {
-                    SnakeEngine.dir.copy(SnakeEngine.nextDir);
-                    const headPos = SnakeEngine.snake[0].position.clone().add(SnakeEngine.dir);
-
-                    if (Math.abs(headPos.x) > 10 || Math.abs(headPos.z) > 10 || SnakeEngine.snake.some(p => p.position.distanceTo(headPos) < 0.1)) {
-                        alert("OYUN BİTTİ! Skor: " + SnakeEngine.score);
-                        AppUI.close('snake-ui');
-                        return;
+                if(h.x<0 || h.x>=this.canvas.width || h.y<0 || h.y>=this.canvas.height || this.snake.some(s=>s.x===h.x && s.y===h.y)) {
+                    this.stop(); Utils.toast("GAME OVER");
+                    const score = this.snake.length;
+                    if(score > userHighScore) {
+                        userHighScore = score;
+                        document.getElementById('best-score').innerText = score;
+                        _supabase.from('profiles').update({ high_score: score }).eq('id', currentUser.id);
+                        _supabase.from('leaderboard').insert({ user_id: currentUser.id, score: score });
                     }
-
-                    const newHead = SnakeEngine.createCube(headPos.x, headPos.y, headPos.z, 0xff007f);
-                    SnakeEngine.snake.unshift(newHead);
-
-                    if (headPos.distanceTo(SnakeEngine.food.position) < 0.5) {
-                        SnakeEngine.score += 10;
-                        document.getElementById('snake-score').innerText = SnakeEngine.score;
-                        SnakeEngine.spawnFood();
-                    } else {
-                        const tail = SnakeEngine.snake.pop();
-                        ActiveModule.scene.remove(tail);
-                        tail.geometry.dispose();
-                    }
-                    SnakeEngine.lastMove = t;
+                    return;
                 }
-                ActiveModule.renderer.render(ActiveModule.scene, ActiveModule.camera);
+                this.snake.unshift(h);
             }
         };
 
-        /** AI IMAGE ENGINE **/
-        const AI = {
-            async generate() {
-                const p = document.getElementById('ai-prompt').value;
-                if (!p) return alert("Lütfen bir prompt girin.");
-                const status = document.getElementById('ai-status');
-                status.style.display = 'block';
-
-                const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?width=1024&height=1024&nologo=true&seed=${Math.random()}`;
-                const img = new Image();
-                img.src = url;
-                img.className = 'gallery-img';
-                img.onload = () => {
-                    status.style.display = 'none';
-                    document.getElementById('ai-gallery').prepend(img);
-                };
-                img.onerror = () => {
-                    status.style.display = 'none';
-                    alert("Görsel oluşturulamadı.");
-                };
-            }
-        };
-
-        /** SUPABASE STORIES **/
-        const Stories = {
-            async post() {
-                const txt = document.getElementById('st-input').value.trim();
-                if (!txt) return;
+        const ChatSvc = {
+            async loadHistory() {
+                const { data } = await _supabase.from('messages').select('*').order('created_at', {ascending:true}).limit(20);
+                data?.forEach(m => this.addMsg(m.message, m.from_user === currentUser.id ? 'user' : 'bot'));
+            },
+            async send() {
+                const i = document.getElementById('chat-in');
+                const txt = i.value.trim(); if(!txt) return;
+                i.value = ''; this.addMsg(txt, 'user');
                 try {
-                    const { error } = await supa.from('stories').insert([{ content: txt }]);
-                    if (error) throw error;
-                    document.getElementById('st-input').value = '';
-                    this.load();
-                } catch(e) { alert("Hata: " + e.message); }
+                    const res = await fetch(`https://text.pollinations.ai/${encodeURIComponent(txt)}`);
+                    if(!res.ok) throw new Error();
+                    this.addMsg(await res.text(), 'bot');
+                } catch { this.addMsg("Sistem meşgul.", "bot"); }
             },
-            async load() {
-                const feed = document.getElementById('story-feed');
-                try {
-                    const { data, error } = await supa.from('stories').select('*').order('created_at', { ascending: false });
-                    if (data) {
-                        feed.innerHTML = data.map(s => `
-                            <div class="story-item">
-                                <small style="color:var(--neon-pink); font-size:10px;">${new Date(s.created_at).toLocaleTimeString()}</small>
-                                <p style="margin-top:5px; font-size:14.5px;">${s.content}</p>
-                            </div>
-                        `).join('');
-                    }
-                } catch(e) { console.error(e); }
+            addMsg(t, type) {
+                const f = document.getElementById('chat-flow');
+                const d = document.createElement('div'); d.className = `msg ${type}`; d.innerText = t;
+                f.appendChild(d); f.scrollTo({ top: f.scrollHeight, behavior: 'smooth' });
             }
         };
 
-        /** MEDIA CONTROLLER (MODERN SADE VERSİYON) **/
-        const Media = {
-            toggle() {
-                const audio = document.getElementById('bg-audio');
-                const playSvg = document.getElementById('play-svg');
-                const pauseSvg = document.getElementById('pause-svg');
-
-                if (audio.paused) {
-                    audio.play().then(() => { 
-                        playSvg.style.display = 'none';
-                        pauseSvg.style.display = 'block';
-                    })
-                    .catch(() => alert("Lütfen etkileşimde bulunun."));
-                } else {
-                    audio.pause();
-                    playSvg.style.display = 'block';
-                    pauseSvg.style.display = 'none';
+        const ProfileSvc = {
+            async handleUpload(i) {
+                const file = i.files[0]; if(!file) return;
+                const path = `${currentUser.id}/avatar.png`;
+                Utils.toast("Yükleniyor...");
+                const { error } = await _supabase.storage.from('avatars').upload(path, file, { upsert: true });
+                if(!error) {
+                    const { data: { publicUrl } } = _supabase.storage.from('avatars').getPublicUrl(path);
+                    document.getElementById('p-avatar').src = `${publicUrl}?t=${Date.now()}`;
+                    Utils.toast("Güncellendi!");
                 }
+            },
+            async save() {
+                const nick = document.getElementById('p-nick-i').value;
+                const avatar = document.getElementById('p-avatar').src;
+                await _supabase.from('profiles').update({ username: nick, avatar_url: avatar }).eq('id', currentUser.id);
+                Utils.toast("Kaydedildi!");
             }
         };
 
-        /** AVATAR UPLOAD **/
-        document.getElementById('pfp-upload').onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const loader = document.getElementById('pfp-loader');
-            const imgPreview = document.getElementById('pfp-img');
-            loader.style.display = 'flex';
-            const reader = new FileReader();
-            reader.onload = (ev) => imgPreview.src = ev.target.result;
-            reader.readAsDataURL(file);
-            try {
-                const fileName = `pfp_${Date.now()}.png`;
-                await supa.storage.from('avatars').upload(fileName, file);
-            } catch(err) { console.error(err); } 
-            finally { loader.style.display = 'none'; }
+        const SocialSvc = {
+            async sendRequest() {
+                const email = document.getElementById('rel-email').value;
+                const { data: target } = await _supabase.from('profiles').select('id').eq('email', email).single();
+                if(!target) return Utils.toast("Hatalı e-posta.");
+                await _supabase.from('relationships').insert({ user_id: currentUser.id, partner_id: target.id, status: 'pending' });
+                Utils.toast("İstek gitti.");
+                this.loadRelations();
+            },
+            async loadRelations() {
+                const { data } = await _supabase.from('relationships').select('*, profiles!partner_id(username)').eq('user_id', currentUser.id);
+                const list = document.getElementById('rel-list'); list.innerHTML = '';
+                data?.forEach(r => {
+                    list.innerHTML += `<div class="card" style="padding:15px; margin-bottom:10px; display:flex; justify-content:space-between; font-size:0.9rem;">
+                        <span>${r.profiles?.username || 'User'}</span>
+                        <small style="color:var(--neon)">${r.status.toUpperCase()}</small>
+                    </div>`;
+                });
+            }
+        };
+
+        const Heart3D = {
+            scene: null, cam: null, rend: null, pts: null, active: false, reqId: null,
+            init() {
+                if(this.scene) return;
+                const c = document.getElementById('home-heart');
+                this.scene = new THREE.Scene();
+                this.cam = new THREE.PerspectiveCamera(75, c.clientWidth/c.clientHeight, 0.1, 1000);
+                this.rend = new THREE.WebGLRenderer({alpha:true, antialias:true});
+                this.rend.setSize(c.clientWidth, c.clientHeight);
+                c.appendChild(this.rend.domElement);
+                const v = []; for(let i=0; i<2500; i++) {
+                    const t = Math.random() * 6.28;
+                    v.push(16*Math.pow(Math.sin(t),3)*0.4, (13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))*0.4, (Math.random()-0.5)*5);
+                }
+                const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+                this.pts = new THREE.Points(geo, new THREE.PointsMaterial({color:0xff0055, size:0.15}));
+                this.scene.add(this.pts); this.cam.position.z = 22;
+                this.resume();
+            },
+            animate() {
+                if(!this.active) return;
+                this.reqId = requestAnimationFrame(() => this.animate());
+                if(this.pts) this.pts.rotation.y += 0.015;
+                this.rend.render(this.scene, this.cam);
+            },
+            pause() { this.active = false; cancelAnimationFrame(this.reqId); },
+            resume() { if(!this.active) { this.active = true; this.animate(); } }
         };
     </script>
 </body>
